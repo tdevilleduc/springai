@@ -25,3 +25,8 @@ replay_pid*
 
 # Build output
 target/
+
+# Secrets locaux
+.env
+*.env
+application-local.properties
