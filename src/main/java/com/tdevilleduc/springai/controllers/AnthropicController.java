@@ -1,6 +1,7 @@
 package com.tdevilleduc.springai.controllers;
 
 import com.tdevilleduc.springai.config.RateLimitConfig;
+import com.tdevilleduc.springai.validation.PromptValidator;
 import io.github.bucket4j.Bucket;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.http.HttpStatus;
@@ -18,13 +19,16 @@ import java.util.Map;
 public class AnthropicController {
 
     private final AnthropicChatModel chatModel;
+    private final PromptValidator promptValidator;
     private final Map<String, Bucket> rateLimitBuckets;
     private final RateLimitConfig rateLimitConfig;
 
     public AnthropicController(AnthropicChatModel chatModel,
+                               PromptValidator promptValidator,
                                Map<String, Bucket> rateLimitBuckets,
                                RateLimitConfig rateLimitConfig) {
         this.chatModel = chatModel;
+        this.promptValidator = promptValidator;
         this.rateLimitBuckets = rateLimitBuckets;
         this.rateLimitConfig = rateLimitConfig;
     }
@@ -32,6 +36,8 @@ public class AnthropicController {
     @GetMapping("/{message}")
     public ResponseEntity<String> getAnswer(@PathVariable String message,
                                             HttpServletRequest request) {
+        promptValidator.validate(message);
+
         String clientIp = request.getRemoteAddr();
         Bucket bucket = rateLimitBuckets.computeIfAbsent(clientIp, k -> rateLimitConfig.createBucket());
 

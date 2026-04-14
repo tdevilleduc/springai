@@ -1,6 +1,7 @@
 package com.tdevilleduc.springai.controllers;
 
 import com.tdevilleduc.springai.config.RateLimitConfig;
+import com.tdevilleduc.springai.validation.PromptValidator;
 import io.github.bucket4j.Bucket;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,9 @@ class AnthropicControllerTest {
     private AnthropicChatModel chatModel;
 
     @Mock
+    private PromptValidator promptValidator;
+
+    @Mock
     private RateLimitConfig rateLimitConfig;
 
     private Map<String, Bucket> rateLimitBuckets;
@@ -33,7 +37,7 @@ class AnthropicControllerTest {
     @BeforeEach
     void setUp() {
         rateLimitBuckets = new ConcurrentHashMap<>();
-        AnthropicController controller = new AnthropicController(chatModel, rateLimitBuckets, rateLimitConfig);
+        AnthropicController controller = new AnthropicController(chatModel, promptValidator, rateLimitBuckets, rateLimitConfig);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -47,6 +51,8 @@ class AnthropicControllerTest {
         mockMvc.perform(get("/api/anthropic/bonjour"))
             .andExpect(status().isOk())
             .andExpect(content().string("Bonjour !"));
+
+        verify(promptValidator).validate("bonjour");
     }
 
     @Test
@@ -71,7 +77,20 @@ class AnthropicControllerTest {
         mockMvc.perform(get("/api/anthropic/hello"));
         mockMvc.perform(get("/api/anthropic/world"));
 
-        // bucket created only once for the same IP
         verify(rateLimitConfig, times(1)).createBucket();
+    }
+
+    @Test
+    void getAnswer_shouldNotCallModelWhenValidationFails() throws Exception {
+        doThrow(new IllegalArgumentException("Le message contient du contenu non autorisé."))
+            .when(promptValidator).validate(any());
+
+        try {
+            mockMvc.perform(get("/api/anthropic/badmessage"));
+        } catch (Exception ignored) {
+            // validation exception propagates as servlet exception in standalone setup
+        }
+
+        verify(chatModel, never()).call((String) any());
     }
 }
