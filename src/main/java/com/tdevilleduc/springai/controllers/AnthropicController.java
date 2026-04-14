@@ -1,6 +1,7 @@
 package com.tdevilleduc.springai.controllers;
 
 import com.tdevilleduc.springai.config.RateLimitConfig;
+import com.tdevilleduc.springai.dto.ChatRequest;
 import com.tdevilleduc.springai.validation.PromptValidator;
 import io.github.bucket4j.Bucket;
 import org.slf4j.Logger;
@@ -8,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,14 +38,14 @@ public class AnthropicController {
         this.rateLimitConfig = rateLimitConfig;
     }
 
-    @GetMapping("/{message}")
-    public ResponseEntity<String> getAnswer(@PathVariable String message,
-                                            HttpServletRequest request) {
-        log.info("Requête reçue — ip={} messageLength={}", request.getRemoteAddr(), message.length());
+    @PostMapping("/chat")
+    public ResponseEntity<String> chat(@RequestBody ChatRequest request,
+                                       HttpServletRequest httpRequest) {
+        log.info("Requête reçue — ip={} messageLength={}", httpRequest.getRemoteAddr(), request.message().length());
 
-        promptValidator.validate(message);
+        promptValidator.validate(request.message());
 
-        String clientIp = request.getRemoteAddr();
+        String clientIp = httpRequest.getRemoteAddr();
         Bucket bucket = rateLimitBuckets.computeIfAbsent(clientIp, k -> rateLimitConfig.createBucket());
 
         if (!bucket.tryConsume(1)) {
@@ -52,8 +53,8 @@ public class AnthropicController {
                 .body("Trop de requêtes. Limite : 10 requêtes par minute.");
         }
 
-        String response = chatModel.call(message);
-        log.info("Réponse envoyée — ip={} responseLength={}", request.getRemoteAddr(), response.length());
+        String response = chatModel.call(request.message());
+        log.info("Réponse envoyée — ip={} responseLength={}", httpRequest.getRemoteAddr(), response.length());
         return ResponseEntity.ok(response);
     }
 }
