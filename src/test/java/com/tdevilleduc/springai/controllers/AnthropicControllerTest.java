@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.controllers;
 
+import com.tdevilleduc.springai.validation.PromptValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,7 +10,7 @@ import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -19,11 +20,14 @@ class AnthropicControllerTest {
     @Mock
     private AnthropicChatModel chatModel;
 
+    @Mock
+    private PromptValidator promptValidator;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        AnthropicController controller = new AnthropicController(chatModel);
+        AnthropicController controller = new AnthropicController(chatModel, promptValidator);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -34,6 +38,8 @@ class AnthropicControllerTest {
         mockMvc.perform(get("/api/anthropic/bonjour"))
             .andExpect(status().isOk())
             .andExpect(content().string("Bonjour, comment puis-je vous aider ?"));
+
+        verify(promptValidator).validate("bonjour");
     }
 
     @Test
@@ -46,11 +52,16 @@ class AnthropicControllerTest {
     }
 
     @Test
-    void getAnswer_shouldHandleEmptyResponse() throws Exception {
-        when(chatModel.call("hello")).thenReturn("");
+    void getAnswer_shouldNotCallModelWhenValidationFails() throws Exception {
+        doThrow(new IllegalArgumentException("Le message contient du contenu non autorisé."))
+            .when(promptValidator).validate(any());
 
-        mockMvc.perform(get("/api/anthropic/hello"))
-            .andExpect(status().isOk())
-            .andExpect(content().string(""));
+        try {
+            mockMvc.perform(get("/api/anthropic/badmessage"));
+        } catch (Exception ignored) {
+            // validation exception propagates as servlet exception in standalone setup
+        }
+
+        verify(chatModel, never()).call((String) any());
     }
 }
