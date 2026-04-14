@@ -26,6 +26,11 @@ replay_pid*
 # Build output
 target/
 
+# Keystores
+*.p12
+*.jks
+*.keystore
+
 # Secrets locaux
 .env
 *.env
