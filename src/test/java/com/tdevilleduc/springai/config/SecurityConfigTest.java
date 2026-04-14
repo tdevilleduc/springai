@@ -17,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -43,7 +44,9 @@ class SecurityConfigTest {
 
     @Test
     void unauthenticatedRequest_shouldReturn401() throws Exception {
-        mockMvc.perform(get("/api/anthropic/hello"))
+        mockMvc.perform(post("/api/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
             .andExpect(status().isUnauthorized());
     }
 
@@ -51,14 +54,18 @@ class SecurityConfigTest {
     void authenticatedRequest_shouldReturn200() throws Exception {
         when(chatModel.call("hello")).thenReturn("réponse");
 
-        mockMvc.perform(get("/api/anthropic/hello")
+        mockMvc.perform(post("/api/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
                 .with(httpBasic("testuser", "testpass")))
             .andExpect(status().isOk());
     }
 
     @Test
     void wrongPassword_shouldReturn401() throws Exception {
-        mockMvc.perform(get("/api/anthropic/hello")
+        mockMvc.perform(post("/api/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
                 .with(httpBasic("testuser", "wrongpass")))
             .andExpect(status().isUnauthorized());
     }
