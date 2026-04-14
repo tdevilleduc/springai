@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.controllers;
 
+import com.tdevilleduc.springai.validation.PromptValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -20,11 +21,14 @@ class AnthropicControllerTest {
     @Mock
     private AnthropicChatModel chatModel;
 
+    @Mock
+    private PromptValidator promptValidator;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        AnthropicController controller = new AnthropicController(chatModel);
+        AnthropicController controller = new AnthropicController(chatModel, promptValidator);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -37,6 +41,8 @@ class AnthropicControllerTest {
                 .content("{\"message\":\"bonjour\"}"))
             .andExpect(status().isOk())
             .andExpect(content().string("Bonjour, comment puis-je vous aider ?"));
+
+        verify(promptValidator).validate("bonjour");
     }
 
     @Test
@@ -51,13 +57,18 @@ class AnthropicControllerTest {
     }
 
     @Test
-    void chat_shouldHandleEmptyResponse() throws Exception {
-        when(chatModel.call("hello")).thenReturn("");
+    void chat_shouldNotCallModelWhenValidationFails() throws Exception {
+        doThrow(new IllegalArgumentException("Le message contient du contenu non autorisé."))
+            .when(promptValidator).validate(any());
 
-        mockMvc.perform(post("/api/anthropic/chat")
+        try {
+            mockMvc.perform(post("/api/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"message\":\"hello\"}"))
-            .andExpect(status().isOk())
-            .andExpect(content().string(""));
+                .content("{\"message\":\"badmessage\"}"));
+        } catch (Exception ignored) {
+            // validation exception propagates as servlet exception in standalone setup
+        }
+
+        verify(chatModel, never()).call((String) any());
     }
 }
