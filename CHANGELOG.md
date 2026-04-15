@@ -4,9 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security fixes
+
+- **#32 — Stack trace exposure in GlobalExceptionHandler**: `handleGeneric` now logs only the exception message at `ERROR` level; the full stack trace is relegated to `DEBUG` to prevent internal architecture details from appearing in production logs
+
 ### Improvements
 
 - **#33 — API versioning**: Renamed all endpoints from `/api/anthropic/...` to `/api/v1/anthropic/...` to enable future breaking-change versions without disrupting existing clients
+
+### Technical improvements
+
+- **Logging framework**: Replaced Logback with Log4j2 (`spring-boot-starter-log4j2`); `spring-boot-starter-logging` excluded from all starters
+- **Test logging capture**: `GlobalExceptionHandlerTest` now uses a Log4j2 `AbstractAppender`-based `TestListAppender` to assert logging behavior (no throwable at `ERROR`, throwable present at `DEBUG`)
 
 ## [0.0.1-SNAPSHOT] - 2026-04-14
 
