@@ -82,8 +82,9 @@ Tests require a minimum of **70% line coverage** (enforced by JaCoCo). The build
 | Component | Version |
 |-----------|---------|
 | Spring Boot | 4.0.5 |
-| Spring AI | 1.0.5 |
+| Spring AI | 2.0.0-M4 |
 | Spring Security | (included with Boot) |
+| Log4j2 | (included with Boot) |
 | Bucket4j | 8.10.1 |
 | JaCoCo | 0.8.13 |
 | Java | 25 |
