@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Security fixes
 
+- **#26 — IP Spoofing via X-Forwarded-For**: Added `getClientIp()` in `AnthropicController` to extract the real client IP from the `X-Forwarded-For` header (first entry) before falling back to `getRemoteAddr()`, ensuring rate limiting works correctly behind reverse proxies and load balancers
 - **#32 — Stack trace exposure in GlobalExceptionHandler**: `handleGeneric` now logs only the exception message at `ERROR` level; the full stack trace is relegated to `DEBUG` to prevent internal architecture details from appearing in production logs
 
 ### Improvements
