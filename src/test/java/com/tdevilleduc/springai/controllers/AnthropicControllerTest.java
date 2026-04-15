@@ -49,7 +49,7 @@ class AnthropicControllerTest {
         when(rateLimitConfig.createBucket()).thenReturn(bucket);
         when(chatModel.call("bonjour")).thenReturn("Bonjour !");
 
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"bonjour\"}"))
             .andExpect(status().isOk())
@@ -64,7 +64,7 @@ class AnthropicControllerTest {
         when(bucket.tryConsume(1)).thenReturn(false);
         when(rateLimitConfig.createBucket()).thenReturn(bucket);
 
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"bonjour\"}"))
             .andExpect(status().isTooManyRequests());
@@ -79,10 +79,10 @@ class AnthropicControllerTest {
         when(rateLimitConfig.createBucket()).thenReturn(bucket);
         when(chatModel.call(anyString())).thenReturn("ok");
 
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"hello\"}"));
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"world\"}"));
 
@@ -95,7 +95,7 @@ class AnthropicControllerTest {
             .when(promptValidator).validate(any());
 
         try {
-            mockMvc.perform(post("/api/anthropic/chat")
+            mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"badmessage\"}"));
         } catch (Exception ignored) {

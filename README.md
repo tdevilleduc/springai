@@ -46,13 +46,13 @@ All endpoints require HTTP Basic authentication.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/anthropic/chat` | Send a message to Claude and get a response |
+| `POST` | `/api/v1/anthropic/chat` | Send a message to Claude and get a response |
 
 ### Example
 
 ```bash
 curl -u admin:your-secure-password \
-     -X POST http://localhost:8443/api/anthropic/chat \
+     -X POST http://localhost:8443/api/v1/anthropic/chat \
      -H "Content-Type: application/json" \
      -d '{"message": "Hello, Claude!"}'
 ```

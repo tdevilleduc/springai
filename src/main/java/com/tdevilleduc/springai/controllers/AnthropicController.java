@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/anthropic")
+@RequestMapping("/api/v1/anthropic")
 public class AnthropicController {
 
     private static final Logger log = LoggerFactory.getLogger(AnthropicController.class);
