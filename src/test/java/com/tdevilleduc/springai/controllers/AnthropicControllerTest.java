@@ -104,4 +104,54 @@ class AnthropicControllerTest {
 
         verify(chatModel, never()).call((String) any());
     }
+
+    @Test
+    void chat_shouldUseXForwardedForIpForRateLimiting() throws Exception {
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitConfig.createBucket()).thenReturn(bucket);
+        when(chatModel.call(anyString())).thenReturn("ok");
+
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .header("X-Forwarded-For", "203.0.113.42")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
+            .andExpect(status().isOk());
+
+        verify(rateLimitConfig, times(1)).createBucket();
+        assert rateLimitBuckets.containsKey("203.0.113.42");
+    }
+
+    @Test
+    void chat_shouldUseFirstIpFromXForwardedForChain() throws Exception {
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitConfig.createBucket()).thenReturn(bucket);
+        when(chatModel.call(anyString())).thenReturn("ok");
+
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .header("X-Forwarded-For", "203.0.113.42, 10.0.0.1, 192.168.1.1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
+            .andExpect(status().isOk());
+
+        assert rateLimitBuckets.containsKey("203.0.113.42");
+        assert !rateLimitBuckets.containsKey("10.0.0.1");
+    }
+
+    @Test
+    void chat_shouldFallbackToRemoteAddrWhenNoXForwardedFor() throws Exception {
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitConfig.createBucket()).thenReturn(bucket);
+        when(chatModel.call(anyString())).thenReturn("ok");
+
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
+            .andExpect(status().isOk());
+
+        // MockMvc uses 127.0.0.1 as default remote address
+        assert rateLimitBuckets.containsKey("127.0.0.1");
+    }
 }
