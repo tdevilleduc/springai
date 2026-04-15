@@ -44,7 +44,7 @@ class SecurityConfigTest {
 
     @Test
     void unauthenticatedRequest_shouldReturn401() throws Exception {
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(APPLICATION_JSON)
                 .content("{\"message\":\"hello\"}"))
             .andExpect(status().isUnauthorized());
@@ -54,7 +54,7 @@ class SecurityConfigTest {
     void authenticatedRequest_shouldReturn200() throws Exception {
         when(chatModel.call("hello")).thenReturn("réponse");
 
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(APPLICATION_JSON)
                 .content("{\"message\":\"hello\"}")
                 .with(httpBasic("testuser", "testpass")))
@@ -63,7 +63,7 @@ class SecurityConfigTest {
 
     @Test
     void wrongPassword_shouldReturn401() throws Exception {
-        mockMvc.perform(post("/api/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(APPLICATION_JSON)
                 .content("{\"message\":\"hello\"}")
                 .with(httpBasic("testuser", "wrongpass")))

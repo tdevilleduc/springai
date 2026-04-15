@@ -31,7 +31,7 @@ class CorsConfigTest {
 
     @Test
     void preflight_shouldReturnAllowedMethods() throws Exception {
-        mockMvc.perform(options("/api/anthropic/test")
+        mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "GET"))
             .andExpect(header().exists("Access-Control-Allow-Origin"));
@@ -39,7 +39,7 @@ class CorsConfigTest {
 
     @Test
     void preflight_shouldAllowGetMethod() throws Exception {
-        mockMvc.perform(options("/api/anthropic/test")
+        mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "GET"))
             .andExpect(header().string("Access-Control-Allow-Methods",
@@ -48,7 +48,7 @@ class CorsConfigTest {
 
     @Test
     void preflight_shouldAllowPostMethod() throws Exception {
-        mockMvc.perform(options("/api/anthropic/test")
+        mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "POST"))
             .andExpect(header().string("Access-Control-Allow-Methods",
