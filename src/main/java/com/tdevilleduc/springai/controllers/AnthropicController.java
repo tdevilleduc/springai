@@ -41,11 +41,11 @@ public class AnthropicController {
     @PostMapping("/chat")
     public ResponseEntity<String> chat(@RequestBody ChatRequest request,
                                        HttpServletRequest httpRequest) {
-        log.info("Requête reçue — ip={} messageLength={}", httpRequest.getRemoteAddr(), request.message().length());
+        String clientIp = getClientIp(httpRequest);
+        log.info("Requête reçue — ip={} messageLength={}", clientIp, request.message().length());
 
         promptValidator.validate(request.message());
 
-        String clientIp = httpRequest.getRemoteAddr();
         Bucket bucket = rateLimitBuckets.computeIfAbsent(clientIp, k -> rateLimitConfig.createBucket());
 
         if (!bucket.tryConsume(1)) {
@@ -54,7 +54,15 @@ public class AnthropicController {
         }
 
         String response = chatModel.call(request.message());
-        log.info("Réponse envoyée — ip={} responseLength={}", httpRequest.getRemoteAddr(), response.length());
+        log.info("Réponse envoyée — ip={} responseLength={}", clientIp, response.length());
         return ResponseEntity.ok(response);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
