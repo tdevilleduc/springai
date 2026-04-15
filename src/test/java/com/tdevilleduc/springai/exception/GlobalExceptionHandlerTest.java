@@ -1,16 +1,18 @@
 package com.tdevilleduc.springai.exception;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,24 +20,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
-    private ListAppender<ILoggingEvent> listAppender;
+    private TestListAppender testAppender;
     private Logger handlerLogger;
 
     @BeforeEach
     void setUp() {
         handler = new GlobalExceptionHandler();
 
-        handlerLogger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        handlerLogger = (Logger) LogManager.getLogger(GlobalExceptionHandler.class);
         handlerLogger.setLevel(Level.DEBUG);
 
-        listAppender = new ListAppender<>();
-        listAppender.start();
-        handlerLogger.addAppender(listAppender);
+        testAppender = new TestListAppender("TestAppender");
+        testAppender.start();
+        handlerLogger.addAppender(testAppender);
     }
 
     @AfterEach
     void tearDown() {
-        handlerLogger.detachAppender(listAppender);
+        handlerLogger.removeAppender(testAppender);
+        testAppender.stop();
     }
 
     @Test
@@ -89,15 +92,15 @@ class GlobalExceptionHandlerTest {
 
         handler.handleGeneric(ex);
 
-        List<ILoggingEvent> errorLogs = listAppender.list.stream()
+        List<LogEvent> errorLogs = testAppender.getEvents().stream()
             .filter(e -> e.getLevel() == Level.ERROR)
             .toList();
 
         assertEquals(1, errorLogs.size());
-        ILoggingEvent errorEvent = errorLogs.get(0);
-        assertTrue(errorEvent.getFormattedMessage().contains("détail sensible"),
+        LogEvent errorEvent = errorLogs.get(0);
+        assertTrue(errorEvent.getMessage().getFormattedMessage().contains("détail sensible"),
             "Le message d'erreur doit contenir le message de l'exception");
-        assertNull(errorEvent.getThrowableProxy(),
+        assertNull(errorEvent.getThrown(),
             "La stack trace ne doit pas être attachée au log ERROR");
     }
 
@@ -107,14 +110,31 @@ class GlobalExceptionHandlerTest {
 
         handler.handleGeneric(ex);
 
-        List<ILoggingEvent> debugLogs = listAppender.list.stream()
+        List<LogEvent> debugLogs = testAppender.getEvents().stream()
             .filter(e -> e.getLevel() == Level.DEBUG)
             .toList();
 
         assertEquals(1, debugLogs.size());
-        assertNotNull(debugLogs.get(0).getThrowableProxy(),
-            "La stack trace doit être attachée au log DEBUG");
-        assertEquals(RuntimeException.class.getName(),
-            debugLogs.get(0).getThrowableProxy().getClassName());
+        Throwable thrown = debugLogs.get(0).getThrown();
+        assertNotNull(thrown, "La stack trace doit être attachée au log DEBUG");
+        assertEquals(RuntimeException.class, thrown.getClass());
+    }
+
+    private static class TestListAppender extends AbstractAppender {
+
+        private final List<LogEvent> events = new ArrayList<>();
+
+        protected TestListAppender(String name) {
+            super(name, null, null, true, Property.EMPTY_ARRAY);
+        }
+
+        @Override
+        public void append(LogEvent event) {
+            events.add(event.toImmutable());
+        }
+
+        public List<LogEvent> getEvents() {
+            return events;
+        }
     }
 }
