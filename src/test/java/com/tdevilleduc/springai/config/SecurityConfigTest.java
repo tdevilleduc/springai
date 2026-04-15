@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -108,5 +109,30 @@ class SecurityConfigTest {
                 .content("{\"message\":\"hello\"}")
                 .with(httpBasic("testuser", "testpass")))
             .andExpect(header().string("Content-Security-Policy", "default-src 'self'"));
+    }
+
+    @Test
+    void actuatorHealth_shouldBePublicWithoutAuth() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void actuatorInfo_shouldBePublicWithoutAuth() throws Exception {
+        mockMvc.perform(get("/actuator/info"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void actuatorMetrics_shouldRequireAuth() throws Exception {
+        mockMvc.perform(get("/actuator/metrics"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void actuatorMetrics_shouldBeAccessibleWithAuth() throws Exception {
+        mockMvc.perform(get("/actuator/metrics")
+                .with(httpBasic("testuser", "testpass")))
+            .andExpect(status().isOk());
     }
 }

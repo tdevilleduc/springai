@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **#42 — Spring Boot Actuator**: Ajout de `spring-boot-starter-actuator` et `micrometer-registry-prometheus` pour l'exposition des métriques de performance
+  - Endpoints exposés : `health`, `info` (publics), `metrics`, `prometheus` (authentifiés)
+  - Timer `anthropic.chat.duration` sur chaque appel au modèle Anthropic
+  - Counter `ratelimit.rejected` incrémenté à chaque dépassement de rate limit
+  - Gauge `ratelimit.buckets.size` sur la taille du cache de buckets IP
 - `AnthropicController` exposing `POST /api/v1/anthropic/chat` to call Claude via Spring AI
 - `ChatRequest` record as the request body DTO
 - `PromptValidator` for input sanitization

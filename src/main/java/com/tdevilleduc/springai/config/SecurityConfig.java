@@ -30,6 +30,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").authenticated()
                 .anyRequest().authenticated())
             .httpBasic(basic -> {})
             .headers(headers -> headers

@@ -4,6 +4,9 @@ import com.tdevilleduc.springai.config.RateLimitConfig;
 import com.tdevilleduc.springai.dto.ChatRequest;
 import com.tdevilleduc.springai.validation.PromptValidator;
 import io.github.bucket4j.Bucket;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.anthropic.AnthropicChatModel;
@@ -27,15 +30,22 @@ public class AnthropicController {
     private final PromptValidator promptValidator;
     private final Map<String, Bucket> rateLimitBuckets;
     private final RateLimitConfig rateLimitConfig;
+    private final MeterRegistry meterRegistry;
 
     public AnthropicController(AnthropicChatModel chatModel,
                                PromptValidator promptValidator,
                                Map<String, Bucket> rateLimitBuckets,
-                               RateLimitConfig rateLimitConfig) {
+                               RateLimitConfig rateLimitConfig,
+                               MeterRegistry meterRegistry) {
         this.chatModel = chatModel;
         this.promptValidator = promptValidator;
         this.rateLimitBuckets = rateLimitBuckets;
         this.rateLimitConfig = rateLimitConfig;
+        this.meterRegistry = meterRegistry;
+
+        Gauge.builder("ratelimit.buckets.size", rateLimitBuckets, Map::size)
+            .description("Nombre de buckets IP actifs")
+            .register(meterRegistry);
     }
 
     @PostMapping("/chat")
@@ -49,11 +59,16 @@ public class AnthropicController {
         Bucket bucket = rateLimitBuckets.computeIfAbsent(clientIp, k -> rateLimitConfig.createBucket());
 
         if (!bucket.tryConsume(1)) {
+            meterRegistry.counter("ratelimit.rejected", "ip", clientIp).increment();
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body("Trop de requêtes. Limite : 10 requêtes par minute.");
         }
 
-        String response = chatModel.call(request.message());
+        String response = Timer.builder("anthropic.chat.duration")
+            .description("Temps de réponse du modèle Anthropic")
+            .register(meterRegistry)
+            .record(() -> chatModel.call(request.message()));
+
         log.info("Réponse envoyée — ip={} responseLength={}", clientIp, response.length());
         return ResponseEntity.ok(response);
     }
