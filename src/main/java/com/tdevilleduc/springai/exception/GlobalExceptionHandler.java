@@ -23,7 +23,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex) {
-        log.error("Erreur interne", ex);
+        log.error("Erreur interne: {}", ex.getMessage());
+        log.debug("Stacktrace:", ex);
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problem.setTitle("Erreur interne");
         problem.setDetail("Une erreur inattendue s'est produite.");
