@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improvements
+
+- **#33 — API versioning**: Renamed all endpoints from `/api/anthropic/...` to `/api/v1/anthropic/...` to enable future breaking-change versions without disrupting existing clients
+
 ## [0.0.1-SNAPSHOT] - 2026-04-14
 
 ### Security fixes
