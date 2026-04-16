@@ -31,7 +31,15 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().authenticated())
-            .httpBasic(basic -> {});
+            .httpBasic(basic -> {})
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(contentType -> {})
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000))
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'")));
         return http.build();
     }
 
