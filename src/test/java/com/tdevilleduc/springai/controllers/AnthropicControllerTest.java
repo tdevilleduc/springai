@@ -3,6 +3,8 @@ package com.tdevilleduc.springai.controllers;
 import com.tdevilleduc.springai.config.RateLimitConfig;
 import com.tdevilleduc.springai.validation.PromptValidator;
 import io.github.bucket4j.Bucket;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,12 +37,15 @@ class AnthropicControllerTest {
     private RateLimitConfig rateLimitConfig;
 
     private Map<String, Bucket> rateLimitBuckets;
+    private MeterRegistry meterRegistry;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         rateLimitBuckets = new ConcurrentHashMap<>();
-        AnthropicController controller = new AnthropicController(chatModel, promptValidator, rateLimitBuckets, rateLimitConfig);
+        meterRegistry = new SimpleMeterRegistry();
+        AnthropicController controller = new AnthropicController(
+            chatModel, promptValidator, rateLimitBuckets, rateLimitConfig, meterRegistry);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -153,5 +160,48 @@ class AnthropicControllerTest {
 
         // MockMvc uses 127.0.0.1 as default remote address
         assert rateLimitBuckets.containsKey("127.0.0.1");
+    }
+
+    @Test
+    void chat_shouldRecordAnthropicCallDuration() throws Exception {
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitConfig.createBucket()).thenReturn(bucket);
+        when(chatModel.call(anyString())).thenReturn("ok");
+
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
+            .andExpect(status().isOk());
+
+        assertNotNull(meterRegistry.find("anthropic.chat.duration").timer(),
+            "Le timer anthropic.chat.duration doit être enregistré");
+        assertEquals(1, meterRegistry.find("anthropic.chat.duration").timer().count(),
+            "Le timer doit avoir enregistré 1 appel");
+    }
+
+    @Test
+    void chat_shouldIncrementRateLimitCounterWhenExceeded() throws Exception {
+        Bucket bucket = mock(Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(false);
+        when(rateLimitConfig.createBucket()).thenReturn(bucket);
+
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}"))
+            .andExpect(status().isTooManyRequests());
+
+        assertNotNull(meterRegistry.find("ratelimit.rejected").counter(),
+            "Le counter ratelimit.rejected doit être enregistré");
+        assertEquals(1.0, meterRegistry.find("ratelimit.rejected").counter().count(),
+            "Le counter doit valoir 1 après un rejet");
+    }
+
+    @Test
+    void constructor_shouldRegisterBucketSizeGauge() {
+        assertNotNull(meterRegistry.find("ratelimit.buckets.size").gauge(),
+            "La gauge ratelimit.buckets.size doit être enregistrée");
+        assertEquals(0.0, meterRegistry.find("ratelimit.buckets.size").gauge().value(),
+            "La gauge doit valoir 0 avec un map vide");
     }
 }
