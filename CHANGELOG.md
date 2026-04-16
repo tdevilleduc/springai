@@ -27,6 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ### Security fixes
 
+- **#38 — CORS GET method unnecessarily allowed**: Removed `GET` from `allowedMethods` in `CorsConfig`; only `POST` and `OPTIONS` are now permitted, matching the actual API surface
 - **#28 — Missing HTTP security headers**: Added explicit `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'self'` and `Strict-Transport-Security` (HSTS, 1 year, includeSubDomains) in `SecurityConfig`
 - **#24 — CORS allowedHeaders overly permissive**: Replaced `allowedHeaders("*")` with an explicit allowlist (`Content-Type`, `Authorization`, `X-Requested-With`) to prevent unauthorized cross-origin requests with credentials; configurable via `CORS_ALLOWED_HEADERS` environment variable
 - **#26 — IP Spoofing via X-Forwarded-For**: Added `getClientIp()` in `AnthropicController` to extract the real client IP from the `X-Forwarded-For` header (first entry) before falling back to `getRemoteAddr()`, ensuring rate limiting works correctly behind reverse proxies and load balancers
