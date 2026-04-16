@@ -19,6 +19,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -80,5 +81,32 @@ class SecurityConfigTest {
         String raw = "mypassword";
         String encoded = passwordEncoder.encode(raw);
         assertTrue(passwordEncoder.matches(raw, encoded));
+    }
+
+    @Test
+    void response_shouldContainXContentTypeOptionsHeader() throws Exception {
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
+                .with(httpBasic("testuser", "testpass")))
+            .andExpect(header().string("X-Content-Type-Options", "nosniff"));
+    }
+
+    @Test
+    void response_shouldContainXFrameOptionsDeny() throws Exception {
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
+                .with(httpBasic("testuser", "testpass")))
+            .andExpect(header().string("X-Frame-Options", "DENY"));
+    }
+
+    @Test
+    void response_shouldContainContentSecurityPolicy() throws Exception {
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
+                .with(httpBasic("testuser", "testpass")))
+            .andExpect(header().string("Content-Security-Policy", "default-src 'self'"));
     }
 }
