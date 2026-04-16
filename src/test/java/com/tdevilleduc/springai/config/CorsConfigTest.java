@@ -35,16 +35,8 @@ class CorsConfigTest {
     void preflight_shouldReturnAllowedMethods() throws Exception {
         mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
-                .header("Access-Control-Request-Method", "GET"))
+                .header("Access-Control-Request-Method", "POST"))
             .andExpect(header().exists("Access-Control-Allow-Origin"));
-    }
-
-    @Test
-    void preflight_shouldAllowGetMethod() throws Exception {
-        mockMvc.perform(options("/api/v1/anthropic/test")
-                .header("Origin", "http://localhost:3000")
-                .header("Access-Control-Request-Method", "GET"))
-            .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")));
     }
 
     @Test
@@ -53,6 +45,14 @@ class CorsConfigTest {
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "POST"))
             .andExpect(header().string("Access-Control-Allow-Methods", containsString("POST")));
+    }
+
+    @Test
+    void preflight_shouldNotAllowGetMethod() throws Exception {
+        mockMvc.perform(options("/api/v1/anthropic/test")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(header().doesNotExist("Access-Control-Allow-Methods"));
     }
 
     @Test
@@ -77,7 +77,7 @@ class CorsConfigTest {
     void preflight_shouldAllowXRequestedWithHeader() throws Exception {
         mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
-                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Method", "POST")
                 .header("Access-Control-Request-Headers", "X-Requested-With"))
             .andExpect(header().string("Access-Control-Allow-Headers", containsString("X-Requested-With")));
     }
@@ -86,7 +86,7 @@ class CorsConfigTest {
     void preflight_shouldNotUseWildcardForAllowedHeaders() throws Exception {
         mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
-                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Method", "POST")
                 .header("Access-Control-Request-Headers", "Content-Type"))
             .andExpect(header().string("Access-Control-Allow-Headers", not(containsString("*"))));
     }
