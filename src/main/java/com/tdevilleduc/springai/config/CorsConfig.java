@@ -11,7 +11,7 @@ public class CorsConfig implements WebMvcConfigurer {
     @Value("${app.cors.allowed-origins:http://localhost:3000}")
     private String[] allowedOrigins;
 
-    @Value("${app.cors.allowed-headers:Content-Type,Authorization,X-Requested-With}")
+    @Value("${app.cors.allowed-headers}")
     private String[] allowedHeaders;
 
     @Override
