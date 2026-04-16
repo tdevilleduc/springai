@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Security fixes
 
+- **#24 — CORS allowedHeaders overly permissive**: Replaced `allowedHeaders("*")` with an explicit allowlist (`Content-Type`, `Authorization`, `X-Requested-With`) to prevent unauthorized cross-origin requests with credentials; configurable via `CORS_ALLOWED_HEADERS` environment variable
 - **#26 — IP Spoofing via X-Forwarded-For**: Added `getClientIp()` in `AnthropicController` to extract the real client IP from the `X-Forwarded-For` header (first entry) before falling back to `getRemoteAddr()`, ensuring rate limiting works correctly behind reverse proxies and load balancers
 - **#32 — Stack trace exposure in GlobalExceptionHandler**: `handleGeneric` now logs only the exception message at `ERROR` level; the full stack trace is relegated to `DEBUG` to prevent internal architecture details from appearing in production logs
 - **#3 — Prompt injection prevention**: Added `PromptValidator` to sanitize user input and block common injection patterns before forwarding to Claude

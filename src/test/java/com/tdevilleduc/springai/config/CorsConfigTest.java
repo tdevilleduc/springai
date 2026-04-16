@@ -10,6 +10,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,8 +44,7 @@ class CorsConfigTest {
         mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "GET"))
-            .andExpect(header().string("Access-Control-Allow-Methods",
-                org.hamcrest.Matchers.containsString("GET")));
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")));
     }
 
     @Test
@@ -51,7 +52,42 @@ class CorsConfigTest {
         mockMvc.perform(options("/api/v1/anthropic/test")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "POST"))
-            .andExpect(header().string("Access-Control-Allow-Methods",
-                org.hamcrest.Matchers.containsString("POST")));
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("POST")));
+    }
+
+    @Test
+    void preflight_shouldAllowContentTypeHeader() throws Exception {
+        mockMvc.perform(options("/api/v1/anthropic/test")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "Content-Type"))
+            .andExpect(header().string("Access-Control-Allow-Headers", containsString("Content-Type")));
+    }
+
+    @Test
+    void preflight_shouldAllowAuthorizationHeader() throws Exception {
+        mockMvc.perform(options("/api/v1/anthropic/test")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "Authorization"))
+            .andExpect(header().string("Access-Control-Allow-Headers", containsString("Authorization")));
+    }
+
+    @Test
+    void preflight_shouldAllowXRequestedWithHeader() throws Exception {
+        mockMvc.perform(options("/api/v1/anthropic/test")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "X-Requested-With"))
+            .andExpect(header().string("Access-Control-Allow-Headers", containsString("X-Requested-With")));
+    }
+
+    @Test
+    void preflight_shouldNotUseWildcardForAllowedHeaders() throws Exception {
+        mockMvc.perform(options("/api/v1/anthropic/test")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "Content-Type"))
+            .andExpect(header().string("Access-Control-Allow-Headers", not(containsString("*"))));
     }
 }
