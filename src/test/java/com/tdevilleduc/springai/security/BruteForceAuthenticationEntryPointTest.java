@@ -85,4 +85,15 @@ class BruteForceAuthenticationEntryPointTest {
 
         assertTrue(response.getHeader("WWW-Authenticate").contains("Basic"));
     }
+
+    @Test
+    void xForwardedForBlank_shouldFallbackToRemoteAddr() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("X-Forwarded-For", "   ");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        entryPoint.commence(request, response, new BadCredentialsException("bad creds"));
+
+        assertEquals(1, service.getFailureCount(request.getRemoteAddr()));
+    }
 }
