@@ -95,6 +95,7 @@ Tests require a minimum of **70% line coverage** (enforced by JaCoCo). The build
 - **Authentication**: HTTP Basic auth on all endpoints
 - **Input validation**: Prompt injection detection and sanitization
 - **Rate limiting**: Per-IP cap to prevent Denial of Wallet attacks
+- **Brute force protection**: HTTP Basic auth failures tracked per IP; returns HTTP 429 after N consecutive bad credentials (configurable via `MAX_AUTH_ATTEMPTS`, default 5); auto-unblock after `BLOCK_DURATION_MINUTES` minutes (default 15)
 - **CORS**: Configurable allowed origins
 - **HTTPS**: Optional TLS via environment variables
 - **Error handling**: Generic responses to avoid information leakage

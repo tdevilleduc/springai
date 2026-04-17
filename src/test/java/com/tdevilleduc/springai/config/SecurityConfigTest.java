@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.config;
 
+import com.tdevilleduc.springai.security.BruteForceProtectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.anthropic.AnthropicChatModel;
@@ -32,6 +33,9 @@ class SecurityConfigTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private BruteForceProtectionService bruteForceProtectionService;
+
     @MockitoBean
     private AnthropicChatModel chatModel;
 
@@ -42,6 +46,7 @@ class SecurityConfigTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
             .apply(springSecurity())
             .build();
+        bruteForceProtectionService.resetFailures("127.0.0.1");
     }
 
     @Test
@@ -134,5 +139,22 @@ class SecurityConfigTest {
         mockMvc.perform(get("/actuator/metrics")
                 .with(httpBasic("testuser", "testpass")))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void afterMaxFailedAttempts_shouldReturn429() throws Exception {
+        // max-auth-attempts=3 in test properties
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/v1/anthropic/chat")
+                    .contentType(APPLICATION_JSON)
+                    .content("{\"message\":\"hello\"}")
+                    .with(httpBasic("testuser", "wrongpass")))
+                .andExpect(status().isUnauthorized());
+        }
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(APPLICATION_JSON)
+                .content("{\"message\":\"hello\"}")
+                .with(httpBasic("testuser", "wrongpass")))
+            .andExpect(status().isTooManyRequests());
     }
 }
