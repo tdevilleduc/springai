@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.security;
 
+import com.tdevilleduc.springai.util.IpUtils;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,7 +32,7 @@ public class BruteForceAuthenticationEntryPoint implements AuthenticationEntryPo
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        String ip = getClientIp(request);
+        String ip = IpUtils.getClientIp(request);
 
         if (authException instanceof BadCredentialsException) {
             bruteForceProtectionService.recordFailure(ip);
@@ -54,13 +55,5 @@ public class BruteForceAuthenticationEntryPoint implements AuthenticationEntryPo
         response.setHeader("WWW-Authenticate", "Basic realm=\"springai\"");
         response.setContentType(MediaType.TEXT_PLAIN_VALUE);
         response.getWriter().write("Authentification requise.");
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

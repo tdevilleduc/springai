@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tdevilleduc.springai.util.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
@@ -51,7 +52,7 @@ public class AnthropicController {
     @PostMapping("/chat")
     public ResponseEntity<String> chat(@RequestBody ChatRequest request,
                                        HttpServletRequest httpRequest) {
-        String clientIp = getClientIp(httpRequest);
+        String clientIp = IpUtils.getClientIp(httpRequest);
         log.info("Requête reçue — ip={} messageLength={}", clientIp, request.message().length());
 
         promptValidator.validate(request.message());
@@ -73,11 +74,5 @@ public class AnthropicController {
         return ResponseEntity.ok(response);
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
-    }
+
 }

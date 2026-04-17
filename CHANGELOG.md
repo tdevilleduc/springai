@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ### Security fixes
 
-- **#39 — Brute force protection on HTTP Basic authentication**: Added `BruteForceProtectionService` (tracks failed attempts per IP with time-based block) and `BruteForceAuthenticationEntryPoint` (increments counter on `BadCredentialsException`, returns HTTP 429 after N consecutive failures, 401 otherwise); wired into `SecurityConfig` via `httpBasic().authenticationEntryPoint()`
+- **#39 — Brute force protection on HTTP Basic authentication** : Ajout de `IpUtils` (utilitaire partagé pour l'extraction de l'IP client via `X-Forwarded-For`), `BruteForceProtectionService` (tracks failed attempts per IP with time-based block) and `BruteForceAuthenticationEntryPoint` (increments counter on `BadCredentialsException`, returns HTTP 429 after N consecutive failures, 401 otherwise); wired into `SecurityConfig` via `httpBasic().authenticationEntryPoint()`
   - Configurable via `app.security.max-auth-attempts` (default: 5) and `app.security.block-duration-minutes` (default: 15)
   - Metrics: `security.auth.failure` counter (per IP) and `security.bruteforce.blocked` counter (per IP) exposed via Micrometer
   - Missing credentials (no `Authorization` header) do not increment the counter
