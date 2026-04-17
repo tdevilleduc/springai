@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.config;
 
+import com.tdevilleduc.springai.security.BruteForceAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,12 @@ public class SecurityConfig {
     @Value("${app.security.password}")
     private String password;
 
+    private final BruteForceAuthenticationEntryPoint bruteForceEntryPoint;
+
+    public SecurityConfig(BruteForceAuthenticationEntryPoint bruteForceEntryPoint) {
+        this.bruteForceEntryPoint = bruteForceEntryPoint;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -34,7 +41,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/actuator/**").authenticated()
                 .anyRequest().authenticated())
-            .httpBasic(basic -> {})
+            .httpBasic(basic -> basic.authenticationEntryPoint(bruteForceEntryPoint))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(bruteForceEntryPoint))
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
                 .contentTypeOptions(contentType -> {})

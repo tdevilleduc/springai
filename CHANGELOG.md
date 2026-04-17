@@ -27,6 +27,10 @@ All notable changes to this project will be documented in this file.
 
 ### Security fixes
 
+- **#39 — Brute force protection on HTTP Basic authentication**: Added `BruteForceProtectionService` (tracks failed attempts per IP with time-based block) and `BruteForceAuthenticationEntryPoint` (increments counter on `BadCredentialsException`, returns HTTP 429 after N consecutive failures, 401 otherwise); wired into `SecurityConfig` via `httpBasic().authenticationEntryPoint()`
+  - Configurable via `app.security.max-auth-attempts` (default: 5) and `app.security.block-duration-minutes` (default: 15)
+  - Metrics: `security.auth.failure` counter (per IP) and `security.bruteforce.blocked` counter (per IP) exposed via Micrometer
+  - Missing credentials (no `Authorization` header) do not increment the counter
 - **#38 — CORS GET method unnecessarily allowed**: Removed `GET` from `allowedMethods` in `CorsConfig`; only `POST` and `OPTIONS` are now permitted, matching the actual API surface
 - **#28 — Missing HTTP security headers**: Added explicit `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'self'` and `Strict-Transport-Security` (HSTS, 1 year, includeSubDomains) in `SecurityConfig`
 - **#24 — CORS allowedHeaders overly permissive**: Replaced `allowedHeaders("*")` with an explicit allowlist (`Content-Type`, `Authorization`, `X-Requested-With`) to prevent unauthorized cross-origin requests with credentials; configurable via `CORS_ALLOWED_HEADERS` environment variable
