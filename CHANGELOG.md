@@ -54,7 +54,7 @@ All notable changes to this project will be documented in this file.
 - **Logging framework**: Replaced Logback with Log4j2 (`spring-boot-starter-log4j2`); `spring-boot-starter-logging` excluded from all starters
 - **#40 — Log4j2 pattern**: Added `log4j2-spring.xml` to replace the Logback-specific `logging.pattern.console` property that was silently ignored
 - **Test logging capture**: `GlobalExceptionHandlerTest` now uses a Log4j2 `AbstractAppender`-based `TestListAppender` to assert logging behavior (no throwable at `ERROR`, throwable present at `DEBUG`)
-- **JaCoCo coverage**: Added JaCoCo `0.8.13` (required for Java 25) with a minimum 70% line coverage gate enforced at build time
+- **JaCoCo coverage**: Added JaCoCo `0.8.13` (required for Java 25) with a minimum 90% line coverage and 80% branch coverage gate enforced at build time
 - **Unit tests**: Added test suites for all components — `PromptValidator`, `SecurityConfig`, `RateLimitConfig`, `AnthropicController`, `GlobalExceptionHandler`, `CorsConfig` — using `MockMvc.standaloneSetup()` and `@SpringBootTest` compatible with Spring Boot 4.x
 
 ### Initial
