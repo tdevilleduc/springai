@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Fichiers REST Client (`http/chat.http`, `http/actuator.http`, `http/http-client.env.json`) pour tester l'API directement depuis VS Code sans outil externe ; couvre les cas nominaux, erreurs de validation, authentification, rate limiting et endpoints Actuator
+
 ### Security
 
 - **#27 — Memory leak dans le rate limiting** : Remplacement du `ConcurrentHashMap` non borné par un cache Caffeine avec éviction automatique (`expireAfterAccess` 1 heure, `maximumSize` 100 000 entrées) dans `RateLimitConfig` ; mise à jour de `AnthropicController` pour utiliser `Cache<String, Bucket>` et `cache.get()` à la place de `computeIfAbsent` ; la Gauge Micrometer `ratelimit.buckets.size` utilise désormais `estimatedSize()` ; taille maximale et durée d'expiration configurables via `app.ratelimit.cache-max-size` et `app.ratelimit.cache-expiry-hours` (surchargeables par variables d'environnement `RATELIMIT_CACHE_MAX_SIZE` et `RATELIMIT_CACHE_EXPIRY_HOURS`)

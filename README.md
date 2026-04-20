@@ -65,6 +65,26 @@ Requests are limited to **10 per minute per IP address**. Exceeding this limit r
 
 All errors return a generic message without exposing internal details or stack traces.
 
+## Testing the API
+
+The `http/` directory contains [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) files for VS Code:
+
+| File | Contents |
+|------|----------|
+| `http-client.env.json` | Environments (dev, dev-ssl, prod) — **must stay at workspace root** |
+| `http/chat.http` | Chat endpoint — nominal, validation errors, auth errors, rate limit |
+| `http/actuator.http` | Actuator endpoints — health, metrics, Prometheus |
+
+Select an environment with `Ctrl+Alt+E` before sending requests:
+
+| Environment | URL | Credentials |
+|-------------|-----|-------------|
+| `dev` | `http://localhost:8443` | `admin` / `changeit` |
+| `dev-ssl` | `https://localhost:8443` | `admin` / `changeit` |
+| `prod` | configured via `APP_USERNAME` / `APP_PASSWORD` env vars | — |
+
+> Update `http/http-client.env.json` with your actual dev credentials. This file is committed — do not put real passwords in it.
+
 ## HTTPS
 
 See [HTTPS.md](HTTPS.md) for instructions on generating a self-signed certificate for development and configuring a CA-signed certificate for production.
