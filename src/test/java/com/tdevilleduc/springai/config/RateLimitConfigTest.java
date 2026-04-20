@@ -4,13 +4,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import io.github.bucket4j.Bucket;
 import org.junit.jupiter.api.Test;
 
-import static com.tdevilleduc.springai.config.RateLimitConfig.CACHE_EXPIRY;
-import static com.tdevilleduc.springai.config.RateLimitConfig.CACHE_MAX_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RateLimitConfigTest {
 
-    private final RateLimitConfig rateLimitConfig = new RateLimitConfig();
+    private final RateLimitConfig rateLimitConfig = new RateLimitConfig(100_000, 1);
 
     @Test
     void rateLimitBuckets_shouldReturnNonNullCache() {
@@ -25,13 +23,21 @@ class RateLimitConfigTest {
     }
 
     @Test
-    void rateLimitBuckets_maxSizeShouldBe100000() {
-        assertEquals(100_000, CACHE_MAX_SIZE);
+    void rateLimitBuckets_shouldRespectConfiguredMaxSize() {
+        RateLimitConfig config = new RateLimitConfig(500, 1);
+        Cache<String, Bucket> cache = config.rateLimitBuckets();
+        cache.policy().eviction().ifPresent(eviction ->
+            assertEquals(500, eviction.getMaximum())
+        );
     }
 
     @Test
-    void rateLimitBuckets_expiryShouldBeOneHour() {
-        assertEquals(3600, CACHE_EXPIRY.getSeconds());
+    void rateLimitBuckets_shouldRespectConfiguredExpiryHours() {
+        RateLimitConfig config = new RateLimitConfig(100_000, 2);
+        Cache<String, Bucket> cache = config.rateLimitBuckets();
+        cache.policy().expireAfterAccess().ifPresent(expiry ->
+            assertEquals(7200, expiry.getExpiresAfter().toSeconds())
+        );
     }
 
     @Test
