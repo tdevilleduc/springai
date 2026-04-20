@@ -1,0 +1,58 @@
+# Tests REST — Actuator endpoints
+# Extension requise : REST Client (humao.rest-client)
+# Sélectionner l'environnement via Ctrl+Alt+E (dev | dev-ssl | prod)
+
+### [200] Health (public)
+GET {{baseUrl}}/actuator/health
+
+###
+
+### [200] Info (public)
+GET {{baseUrl}}/actuator/info
+
+###
+
+### [200] Liste de toutes les métriques (authentifié)
+GET {{baseUrl}}/actuator/metrics
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] Durée des appels Anthropic
+GET {{baseUrl}}/actuator/metrics/anthropic.chat.duration
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] Nombre de buckets IP actifs dans le cache Caffeine
+GET {{baseUrl}}/actuator/metrics/ratelimit.buckets.size
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] Requêtes rejetées par le rate limiter
+GET {{baseUrl}}/actuator/metrics/ratelimit.rejected
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] Échecs d'authentification par IP
+GET {{baseUrl}}/actuator/metrics/security.auth.failure
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] IPs bloquées par la protection brute force
+GET {{baseUrl}}/actuator/metrics/security.bruteforce.blocked
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [200] Scrape Prometheus complet
+GET {{baseUrl}}/actuator/prometheus
+Authorization: Basic {{username}} {{password}}
+
+###
+
+### [401] Métriques sans credentials
+GET {{baseUrl}}/actuator/metrics
