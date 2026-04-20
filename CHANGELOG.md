@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+
+- **#25 — Validation manquante sur le body de la requête** : Ajout de `spring-boot-starter-validation`, annotations `@NotBlank` et `@Size(max = 4000)` sur `ChatRequest.message`, `@Valid` sur le `@RequestBody` du contrôleur, et handler `MethodArgumentNotValidException` dans `GlobalExceptionHandler` pour retourner HTTP 400 avec le détail de la contrainte violée — élimine le risque de NPE sur `request.message().length()` et bloque les abus par message surdimensionné avant d'atteindre le modèle
+
 ### Added
 
 - **#42 — Spring Boot Actuator**: Ajout de `spring-boot-starter-actuator` et `micrometer-registry-prometheus` pour l'exposition des métriques de performance
