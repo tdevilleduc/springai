@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.exception;
 
+import com.tdevilleduc.springai.dto.ChatRequest;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -9,9 +10,14 @@ import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +45,39 @@ class GlobalExceptionHandlerTest {
     void tearDown() {
         handlerLogger.removeAppender(testAppender);
         testAppender.stop();
+    }
+
+    @SuppressWarnings("unused")
+    private void dummyChatMethod(@RequestBody ChatRequest req) {}
+
+    private MethodArgumentNotValidException buildValidationException(String field, String message) throws Exception {
+        ChatRequest request = new ChatRequest(null);
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "chatRequest");
+        bindingResult.rejectValue(field, "constraint", message);
+        Method method = GlobalExceptionHandlerTest.class.getDeclaredMethod("dummyChatMethod", ChatRequest.class);
+        MethodParameter parameter = new MethodParameter(method, 0);
+        return new MethodArgumentNotValidException(parameter, bindingResult);
+    }
+
+    @Test
+    void handleMethodArgumentNotValid_shouldReturn400() throws Exception {
+        MethodArgumentNotValidException ex = buildValidationException("message", "Le message ne peut pas être vide.");
+        ProblemDetail result = handler.handleMethodArgumentNotValid(ex);
+        assertEquals(HttpStatus.BAD_REQUEST.value(), result.getStatus());
+    }
+
+    @Test
+    void handleMethodArgumentNotValid_shouldSetTitle() throws Exception {
+        MethodArgumentNotValidException ex = buildValidationException("message", "Le message ne peut pas être vide.");
+        ProblemDetail result = handler.handleMethodArgumentNotValid(ex);
+        assertEquals("Requête invalide", result.getTitle());
+    }
+
+    @Test
+    void handleMethodArgumentNotValid_shouldSetDetailFromFieldError() throws Exception {
+        MethodArgumentNotValidException ex = buildValidationException("message", "Le message ne peut pas être vide.");
+        ProblemDetail result = handler.handleMethodArgumentNotValid(ex);
+        assertEquals("Le message ne peut pas être vide.", result.getDetail());
     }
 
     @Test

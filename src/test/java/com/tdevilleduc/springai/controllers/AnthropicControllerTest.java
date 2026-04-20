@@ -18,6 +18,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.tdevilleduc.springai.exception.GlobalExceptionHandler;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -46,7 +49,12 @@ class AnthropicControllerTest {
         meterRegistry = new SimpleMeterRegistry();
         AnthropicController controller = new AnthropicController(
             chatModel, promptValidator, rateLimitBuckets, rateLimitConfig, meterRegistry);
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .setValidator(validator)
+            .build();
     }
 
     @Test
@@ -101,13 +109,41 @@ class AnthropicControllerTest {
         doThrow(new IllegalArgumentException("Le message contient du contenu non autorisé."))
             .when(promptValidator).validate(any());
 
-        try {
-            mockMvc.perform(post("/api/v1/anthropic/chat")
+        mockMvc.perform(post("/api/v1/anthropic/chat")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"message\":\"badmessage\"}"));
-        } catch (Exception ignored) {
-            // validation exception propagates as servlet exception in standalone setup
-        }
+                .content("{\"message\":\"badmessage\"}"))
+            .andExpect(status().isBadRequest());
+
+        verify(chatModel, never()).call((String) any());
+    }
+
+    @Test
+    void chat_shouldReturn400WhenMessageIsNull() throws Exception {
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":null}"))
+            .andExpect(status().isBadRequest());
+
+        verify(chatModel, never()).call((String) any());
+    }
+
+    @Test
+    void chat_shouldReturn400WhenMessageIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"\"}"))
+            .andExpect(status().isBadRequest());
+
+        verify(chatModel, never()).call((String) any());
+    }
+
+    @Test
+    void chat_shouldReturn400WhenMessageExceedsMaxSize() throws Exception {
+        String oversized = "a".repeat(4001);
+        mockMvc.perform(post("/api/v1/anthropic/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"" + oversized + "\"}"))
+            .andExpect(status().isBadRequest());
 
         verify(chatModel, never()).call((String) any());
     }

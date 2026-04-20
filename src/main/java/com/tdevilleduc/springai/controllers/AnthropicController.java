@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,7 +51,7 @@ public class AnthropicController {
     }
 
     @PostMapping("/chat")
-    public ResponseEntity<String> chat(@RequestBody ChatRequest request,
+    public ResponseEntity<String> chat(@Valid @RequestBody ChatRequest request,
                                        HttpServletRequest httpRequest) {
         String clientIp = IpUtils.getClientIp(httpRequest);
         log.info("Requête reçue — ip={} messageLength={}", clientIp, request.message().length());
