@@ -15,9 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.tdevilleduc.springai.exception.GlobalExceptionHandler;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
@@ -39,13 +38,13 @@ class AnthropicControllerTest {
     @Mock
     private RateLimitConfig rateLimitConfig;
 
-    private Map<String, Bucket> rateLimitBuckets;
+    private Cache<String, Bucket> rateLimitBuckets;
     private MeterRegistry meterRegistry;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        rateLimitBuckets = new ConcurrentHashMap<>();
+        rateLimitBuckets = Caffeine.newBuilder().build();
         meterRegistry = new SimpleMeterRegistry();
         AnthropicController controller = new AnthropicController(
             chatModel, promptValidator, rateLimitBuckets, rateLimitConfig, meterRegistry);
@@ -162,7 +161,7 @@ class AnthropicControllerTest {
             .andExpect(status().isOk());
 
         verify(rateLimitConfig, times(1)).createBucket();
-        assert rateLimitBuckets.containsKey("203.0.113.42");
+        assert rateLimitBuckets.asMap().containsKey("203.0.113.42");
     }
 
     @Test
@@ -178,8 +177,8 @@ class AnthropicControllerTest {
                 .content("{\"message\":\"hello\"}"))
             .andExpect(status().isOk());
 
-        assert rateLimitBuckets.containsKey("203.0.113.42");
-        assert !rateLimitBuckets.containsKey("10.0.0.1");
+        assert rateLimitBuckets.asMap().containsKey("203.0.113.42");
+        assert !rateLimitBuckets.asMap().containsKey("10.0.0.1");
     }
 
     @Test
@@ -195,7 +194,7 @@ class AnthropicControllerTest {
             .andExpect(status().isOk());
 
         // MockMvc uses 127.0.0.1 as default remote address
-        assert rateLimitBuckets.containsKey("127.0.0.1");
+        assert rateLimitBuckets.asMap().containsKey("127.0.0.1");
     }
 
     @Test

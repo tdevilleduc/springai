@@ -1,5 +1,6 @@
 package com.tdevilleduc.springai.controllers;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.tdevilleduc.springai.config.RateLimitConfig;
 import com.tdevilleduc.springai.dto.ChatRequest;
 import com.tdevilleduc.springai.validation.PromptValidator;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.tdevilleduc.springai.util.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/anthropic")
@@ -30,13 +30,13 @@ public class AnthropicController {
 
     private final AnthropicChatModel chatModel;
     private final PromptValidator promptValidator;
-    private final Map<String, Bucket> rateLimitBuckets;
+    private final Cache<String, Bucket> rateLimitBuckets;
     private final RateLimitConfig rateLimitConfig;
     private final MeterRegistry meterRegistry;
 
     public AnthropicController(AnthropicChatModel chatModel,
                                PromptValidator promptValidator,
-                               Map<String, Bucket> rateLimitBuckets,
+                               Cache<String, Bucket> rateLimitBuckets,
                                RateLimitConfig rateLimitConfig,
                                MeterRegistry meterRegistry) {
         this.chatModel = chatModel;
@@ -45,7 +45,7 @@ public class AnthropicController {
         this.rateLimitConfig = rateLimitConfig;
         this.meterRegistry = meterRegistry;
 
-        Gauge.builder("ratelimit.buckets.size", rateLimitBuckets, Map::size)
+        Gauge.builder("ratelimit.buckets.size", rateLimitBuckets, cache -> (double) cache.estimatedSize())
             .description("Nombre de buckets IP actifs")
             .register(meterRegistry);
     }
@@ -58,7 +58,7 @@ public class AnthropicController {
 
         promptValidator.validate(request.message());
 
-        Bucket bucket = rateLimitBuckets.computeIfAbsent(clientIp, k -> rateLimitConfig.createBucket());
+        Bucket bucket = rateLimitBuckets.get(clientIp, k -> rateLimitConfig.createBucket());
 
         if (!bucket.tryConsume(1)) {
             meterRegistry.counter("ratelimit.rejected", "ip", clientIp).increment();
@@ -74,6 +74,4 @@ public class AnthropicController {
         log.info("Réponse envoyée — ip={} responseLength={}", clientIp, response.length());
         return ResponseEntity.ok(response);
     }
-
-
 }

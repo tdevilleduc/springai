@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Security
 
+- **#27 — Memory leak dans le rate limiting** : Remplacement du `ConcurrentHashMap` non borné par un cache Caffeine avec éviction automatique (`expireAfterAccess` 1 heure, `maximumSize` 100 000 entrées) dans `RateLimitConfig` ; mise à jour de `AnthropicController` pour utiliser `Cache<String, Bucket>` et `cache.get()` à la place de `computeIfAbsent` ; la Gauge Micrometer `ratelimit.buckets.size` utilise désormais `estimatedSize()` ; taille maximale et durée d'expiration configurables via `app.ratelimit.cache-max-size` et `app.ratelimit.cache-expiry-hours` (surchargeables par variables d'environnement `RATELIMIT_CACHE_MAX_SIZE` et `RATELIMIT_CACHE_EXPIRY_HOURS`)
 - **#25 — Validation manquante sur le body de la requête** : Ajout de `spring-boot-starter-validation`, annotations `@NotBlank` et `@Size(max = 4000)` sur `ChatRequest.message`, `@Valid` sur le `@RequestBody` du contrôleur, et handler `MethodArgumentNotValidException` dans `GlobalExceptionHandler` pour retourner HTTP 400 avec le détail de la contrainte violée — élimine le risque de NPE sur `request.message().length()` et bloque les abus par message surdimensionné avant d'atteindre le modèle
 
 ### Added
