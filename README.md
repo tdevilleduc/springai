@@ -71,6 +71,7 @@ The `http/` directory contains [REST Client](https://marketplace.visualstudio.co
 
 | File | Contents |
 |------|----------|
+| `http-client.env.json` | Environments (dev, dev-ssl, prod) — **must stay at workspace root** |
 | `http/chat.http` | Chat endpoint — nominal, validation errors, auth errors, rate limit |
 | `http/actuator.http` | Actuator endpoints — health, metrics, Prometheus |
 
